@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ITS — Task System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f3ef;
+  --surface: #fdfcfa;
+  --surface2: #eceae4;
+  --border: #d8d4cc;
+  --border2: #c8c3b8;
+  --ink: #1a1916;
+  --ink2: #4a4740;
+  --ink3: #8a8680;
+  --accent: #2d5be3;
+  --accent-light: #e8eefb;
+  --green: #1a7a4a;
+  --green-light: #e4f3ec;
+  --red: #c0392b;
+  --red-light: #faeae8;
+  --amber: #b05c10;
+  --amber-light: #fdf0e4;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', sans-serif; min-height: 100vh; font-size: 14px; line-height: 1.5; }
+.app { display: grid; grid-template-columns: 220px 1fr 280px; grid-template-rows: 56px 1fr; height: 100vh; }
+
+/* HEADER */
+header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid var(--border); background: var(--surface); }
+.logo { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink2); display: flex; align-items: center; gap: 8px; }
+.logo-mark { width: 22px; height: 22px; background: var(--ink); border-radius: 5px; display: flex; align-items: center; justify-content: center; color: var(--bg); font-size: 10px; font-weight: 600; letter-spacing: 0; }
+.header-stats { display: flex; font-family: 'DM Mono', monospace; }
+.hstat { display: flex; align-items: center; gap: 6px; padding: 0 16px; border-left: 1px solid var(--border); font-size: 12px; color: var(--ink3); }
+.hstat:first-child { border-left: none; }
+.hstat-val { font-weight: 500; color: var(--ink); font-size: 13px; }
+.streak-pill { display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; background: var(--amber-light); border: 1px solid #e8c99a; font-size: 12px; font-weight: 500; color: var(--amber); font-family: 'DM Mono', monospace; }
+
+/* SIDEBAR */
+.sidebar { border-right: 1px solid var(--border); padding: 16px 0; overflow-y: auto; background: var(--surface); }
+.sidebar-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); padding: 10px 16px 4px; font-family: 'DM Mono', monospace; }
+.nav-btn { display: flex; align-items: center; gap: 10px; padding: 9px 16px; width: 100%; background: none; border: none; color: var(--ink2); font-family: 'DM Sans', sans-serif; font-size: 13.5px; font-weight: 400; cursor: pointer; transition: all 0.15s; text-align: left; }
+.nav-btn:hover { color: var(--ink); background: rgba(26,25,22,0.04); }
+.nav-btn.active { color: var(--ink); background: var(--surface2); font-weight: 500; }
+.nav-icon { width: 18px; text-align: center; opacity: 0.6; font-size: 13px; }
+
+/* MAIN */
+.main { overflow-y: auto; padding: 24px; background: var(--bg); }
+.panel { display: none; }
+.panel.active { display: block; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.panel-header { margin-bottom: 20px; display: flex; align-items: baseline; justify-content: space-between; }
+.panel-title { font-size: 18px; font-weight: 600; }
+.panel-sub { font-size: 11px; color: var(--ink3); font-family: 'DM Mono', monospace; }
+
+/* TASK LIST */
+.task-list { display: flex; flex-direction: column; gap: 3px; }
+.task-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; display: grid; grid-template-columns: 44px 1fr auto auto; align-items: center; gap: 10px; transition: border-color 0.15s; }
+.task-card:hover { border-color: var(--border2); box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+.task-card.completed { background: var(--bg); border-color: transparent; }
+
+/* TOGGLE */
+.toggle-wrap { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+.toggle-wrap input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-slider { position: absolute; inset: 0; background: var(--border2); border-radius: 10px; cursor: pointer; transition: background 0.2s; }
+.toggle-slider::after { content: ''; position: absolute; left: 3px; top: 3px; width: 14px; height: 14px; border-radius: 50%; background: white; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.18); }
+.toggle-wrap input:checked + .toggle-slider { background: var(--green); }
+.toggle-wrap input:checked + .toggle-slider::after { transform: translateX(16px); }
+
+.task-info { min-width: 0; }
+.task-title { font-weight: 500; font-size: 14px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.task-card.completed .task-title { text-decoration: line-through; color: var(--ink3); font-weight: 400; }
+.task-meta { display: flex; gap: 6px; align-items: center; font-size: 11px; color: var(--ink3); font-family: 'DM Mono', monospace; }
+.tag { padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 500; }
+.tag-easy { background: var(--green-light); color: var(--green); }
+.tag-medium { background: var(--amber-light); color: var(--amber); }
+.tag-hard { background: var(--red-light); color: var(--red); }
+.tag-overdue { background: var(--red-light); color: var(--red); }
+.task-priority { text-align: center; font-family: 'DM Mono', monospace; min-width: 38px; }
+.priority-val { display: block; font-size: 15px; font-weight: 500; color: var(--accent); }
+.priority-label { font-size: 9px; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.08em; }
+.task-actions { display: flex; }
+.icon-btn { width: 26px; height: 26px; border-radius: 5px; border: 1px solid transparent; background: transparent; color: var(--ink3); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; transition: all 0.15s; }
+.icon-btn:hover { border-color: var(--border2); color: var(--red); background: var(--red-light); }
+
+/* ADD FORM */
+.form-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; max-width: 480px; }
+.form-row { margin-bottom: 18px; }
+label { display: block; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink2); margin-bottom: 6px; font-family: 'DM Mono', monospace; }
+input[type=text], input[type=date] { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 9px 12px; color: var(--ink); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color 0.15s; }
+input[type=text]:focus, input[type=date]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,91,227,0.08); }
+.diff-grid { display: flex; gap: 6px; }
+.diff-opt { flex: 1; padding: 8px 4px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--ink3); font-family: 'DM Mono', monospace; font-size: 12px; cursor: pointer; text-align: center; transition: all 0.15s; line-height: 1.4; }
+.diff-opt:hover { border-color: var(--border2); color: var(--ink); }
+.diff-opt.sel { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+.btn-primary { padding: 10px 22px; background: var(--ink); color: var(--bg); border: none; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.15s; }
+.btn-primary:hover { background: #333; }
+
+/* ANALYTICS */
+.analytics-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 24px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; border-top: 3px solid var(--border2); }
+.stat-card.good { border-top-color: var(--green); }
+.stat-card.warn { border-top-color: var(--amber); }
+.stat-card.bad { border-top-color: var(--red); }
+.stat-val { font-size: 28px; font-weight: 600; color: var(--ink); font-family: 'DM Mono', monospace; line-height: 1; margin-bottom: 4px; }
+.stat-name { font-size: 10px; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.08em; font-family: 'DM Mono', monospace; }
+.section-title { font-size: 11px; font-weight: 500; color: var(--ink2); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; font-family: 'DM Mono', monospace; }
+.diff-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-family: 'DM Mono', monospace; font-size: 11px; }
+.diff-lbl { width: 52px; color: var(--ink2); text-transform: uppercase; letter-spacing: 0.05em; }
+.diff-bar-bg { flex: 1; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.diff-bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
+.diff-bar-fill.easy { background: var(--green); }
+.diff-bar-fill.medium { background: var(--amber); }
+.diff-bar-fill.hard { background: var(--red); }
+.diff-pct { width: 40px; text-align: right; color: var(--ink); font-weight: 500; }
+.insight-row { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--border2); border-radius: 6px; padding: 12px 14px; margin-bottom: 8px; font-size: 13px; color: var(--ink2); line-height: 1.5; }
+.insight-row.positive { border-left-color: var(--green); }
+.insight-row.warning { border-left-color: var(--amber); }
+.insight-row.negative { border-left-color: var(--red); }
+
+/* FOCUS MODE */
+.focus-header { background: var(--ink); border-radius: 10px; padding: 24px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+.focus-stat { text-align: center; color: var(--bg); }
+.focus-num { font-size: 38px; font-weight: 600; line-height: 1; font-family: 'DM Mono', monospace; margin-bottom: 4px; }
+.focus-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.45; font-family: 'DM Mono', monospace; }
+.focus-divider { width: 1px; height: 52px; background: rgba(255,255,255,0.1); }
+.rank-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+.rank-icon { font-size: 22px; }
+.rank-info h3 { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+.rank-info p { font-size: 12px; color: var(--ink3); }
+.prog-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+.prog-label-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink3); margin-bottom: 8px; font-family: 'DM Mono', monospace; }
+.prog-bar-bg { height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.prog-bar-fill { height: 100%; border-radius: 3px; background: var(--ink); transition: width 1s ease; }
+
+/* SEARCH */
+.search-box { position: relative; margin-bottom: 16px; }
+.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink3); font-size: 13px; pointer-events: none; }
+.search-box input { padding-left: 36px; }
+
+/* RIGHT PANEL */
+.right-panel { border-left: 1px solid var(--border); padding: 16px; overflow-y: auto; background: var(--surface); }
+.rp-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); margin-bottom: 10px; font-family: 'DM Mono', monospace; }
+.rp-section { margin-bottom: 22px; }
+.rec-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+.rec-eyebrow { font-size: 10px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; font-family: 'DM Mono', monospace; }
+.rec-title { font-weight: 500; font-size: 13px; }
+.summary-table { width: 100%; border-collapse: collapse; }
+.summary-table td { padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.summary-table tr:last-child td { border-bottom: none; }
+.summary-table td:first-child { color: var(--ink3); }
+.summary-table td:last-child { text-align: right; font-weight: 500; font-family: 'DM Mono', monospace; }
+.mini-prog-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink3); margin-bottom: 5px; font-family: 'DM Mono', monospace; }
+.mini-prog-bg { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.mini-prog-fill { height: 100%; border-radius: 2px; background: var(--ink); transition: width 1s ease; }
+
+/* MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(26,25,22,0.4); z-index: 100; display: none; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; width: 380px; max-width: 90vw; box-shadow: 0 8px 32px rgba(0,0,0,0.12); animation: fadeIn 0.15s ease; }
+.modal h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+.modal p { font-size: 13px; color: var(--ink2); line-height: 1.5; }
+.modal-actions { display: flex; gap: 8px; margin-top: 18px; justify-content: flex-end; }
+.btn-ghost { padding: 8px 16px; background: transparent; border: 1px solid var(--border); border-radius: 6px; color: var(--ink2); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+.btn-ghost:hover { border-color: var(--border2); color: var(--ink); }
+.btn-danger { padding: 8px 16px; background: var(--red-light); border: 1px solid #e8b0aa; border-radius: 6px; color: var(--red); font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+.btn-danger:hover { background: #f5d8d5; }
+
+/* TOAST */
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(70px); background: var(--ink); border-radius: 8px; padding: 10px 18px; font-size: 13px; font-weight: 500; color: var(--bg); z-index: 999; transition: transform 0.25s cubic-bezier(0.34,1.3,0.64,1); pointer-events: none; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+.empty-state { text-align: center; padding: 40px 20px; color: var(--ink3); }
+.empty-icon { font-size: 20px; margin-bottom: 10px; opacity: 0.5; }
+.empty-text { font-size: 13px; }
+::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo">
+      <div class="logo-mark">IT</div>
+      Intelligent Task System
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><span class="hstat-val" id="h-total">0</span>&nbsp;total</div>
+      <div class="hstat"><span class="hstat-val" id="h-done">0</span>&nbsp;done</div>
+      <div class="hstat"><span class="hstat-val" id="h-rate">0%</span>&nbsp;rate</div>
+      <div class="hstat"><span class="hstat-val" id="h-overdue">0</span>&nbsp;overdue</div>
+    </div>
+    <div class="streak-pill">🔥 <span id="h-streak">0</span> day streak</div>
+  </header>
+
+  <nav class="sidebar">
+    <div class="sidebar-label">Tasks</div>
+    <button class="nav-btn active" onclick="showPanel('tasks')"><span class="nav-icon">▤</span> Board</button>
+    <button class="nav-btn" onclick="showPanel('add')"><span class="nav-icon">+</span> Add Task</button>
+    <button class="nav-btn" onclick="showPanel('search')"><span class="nav-icon">◎</span> Search</button>
+    <div class="sidebar-label" style="margin-top:8px;">Insights</div>
+    <button class="nav-btn" onclick="showPanel('analytics')"><span class="nav-icon">↗</span> Analytics</button>
+    <button class="nav-btn" onclick="showPanel('focus')"><span class="nav-icon">◆</span> Focus Mode</button>
+  </nav>
+
+  <main class="main">
+
+    <div id="panel-tasks" class="panel active">
+      <div class="panel-header">
+        <div class="panel-title">Task Board</div>
+        <div class="panel-sub" id="board-sub">sorted by priority</div>
+      </div>
+      <div class="task-list" id="task-list"></div>
+    </div>
+
+    <div id="panel-add" class="panel">
+      <div class="panel-header"><div class="panel-title">Add Task</div></div>
+      <div class="form-card">
+        <div class="form-row">
+          <label>Title</label>
+          <input type="text" id="inp-title" placeholder="What needs to be done?" />
+        </div>
+        <div class="form-row">
+          <label>Deadline</label>
+          <input type="date" id="inp-deadline" />
+        </div>
+        <div class="form-row">
+          <label>Difficulty</label>
+          <div class="diff-grid">
+            <div class="diff-opt" onclick="selectDiff(1)">1<br><span style="font-size:9px;opacity:0.55">easy</span></div>
+            <div class="diff-opt" onclick="selectDiff(2)">2<br><span style="font-size:9px;opacity:0.55">mild</span></div>
+            <div class="diff-opt" onclick="selectDiff(3)">3<br><span style="font-size:9px;opacity:0.55">medium</span></div>
+            <div class="diff-opt" onclick="selectDiff(4)">4<br><span style="font-size:9px;opacity:0.55">hard</span></div>
+            <div class="diff-opt" onclick="selectDiff(5)">5<br><span style="font-size:9px;opacity:0.55">expert</span></div>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="addTask()">Add Task</button>
+      </div>
+    </div>
+
+    <div id="panel-search" class="panel">
+      <div class="panel-header"><div class="panel-title">Search</div></div>
+      <div class="search-box">
+        <span class="search-icon">◎</span>
+        <input type="text" id="search-inp" placeholder="Search by title or date..." oninput="searchTasks()" />
+      </div>
+      <div class="task-list" id="search-results">
+        <div class="empty-state"><div class="empty-icon">◎</div><div class="empty-text">Start typing to search.</div></div>
+      </div>
+    </div>
+
+    <div id="panel-analytics" class="panel">
+      <div class="panel-header"><div class="panel-title">Analytics</div></div>
+      <div class="analytics-row">
+        <div class="stat-card" id="sc-rate"><div class="stat-val" id="an-rate">0%</div><div class="stat-name">Completion</div></div>
+        <div class="stat-card" id="sc-overdue"><div class="stat-val" id="an-overdue">0</div><div class="stat-name">Overdue</div></div>
+        <div class="stat-card" id="sc-score"><div class="stat-val" id="an-score">—</div><div class="stat-name">Productivity</div></div>
+      </div>
+      <div class="section-title">Difficulty Breakdown</div>
+      <div style="margin-bottom:24px;">
+        <div class="diff-bar-row"><span class="diff-lbl">Easy</span><div class="diff-bar-bg"><div class="diff-bar-fill easy" id="bar-easy" style="width:0%"></div></div><span class="diff-pct" id="pct-easy">0%</span></div>
+        <div class="diff-bar-row"><span class="diff-lbl">Medium</span><div class="diff-bar-bg"><div class="diff-bar-fill medium" id="bar-medium" style="width:0%"></div></div><span class="diff-pct" id="pct-medium">0%</span></div>
+        <div class="diff-bar-row"><span class="diff-lbl">Hard</span><div class="diff-bar-bg"><div class="diff-bar-fill hard" id="bar-hard" style="width:0%"></div></div><span class="diff-pct" id="pct-hard">0%</span></div>
+      </div>
+      <div class="section-title">Insights</div>
+      <div id="insights-list"></div>
+    </div>
+
+    <div id="panel-focus" class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Focus Mode</div>
+        <div class="panel-sub">your progress snapshot</div>
+      </div>
+      <div class="focus-header">
+        <div class="focus-stat"><div class="focus-num" id="gami-points">0</div><div class="focus-label">Points</div></div>
+        <div class="focus-divider"></div>
+        <div class="focus-stat"><div class="focus-num" id="gami-streak">0</div><div class="focus-label">Streak</div></div>
+        <div class="focus-divider"></div>
+        <div class="focus-stat"><div class="focus-num" id="gami-done">0</div><div class="focus-label">Completed</div></div>
+      </div>
+      <div class="section-title">Current Rank</div>
+      <div class="rank-card" id="rank-card"></div>
+      <div class="prog-wrap">
+        <div class="prog-label-row"><span>Progress to next rank</span><span id="next-rank-label">—</span></div>
+        <div class="prog-bar-bg"><div class="prog-bar-fill" id="rank-prog" style="width:0%"></div></div>
+      </div>
+    </div>
+
+  </main>
+
+  <aside class="right-panel">
+    <div class="rp-section">
+      <div class="rp-label">Next Up</div>
+      <div class="rec-card">
+        <div class="rec-eyebrow">Recommended</div>
+        <div class="rec-title" id="rec-task">All done!</div>
+      </div>
+    </div>
+    <div class="rp-section">
+      <div class="rp-label">Progress</div>
+      <div class="mini-prog-row"><span>Completion</span><span id="prog-label">0%</span></div>
+      <div class="mini-prog-bg"><div class="mini-prog-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+    <div class="rp-section">
+      <div class="rp-label">Summary</div>
+      <table class="summary-table">
+        <tr><td>Total</td><td id="s-total">0</td></tr>
+        <tr><td>Completed</td><td id="s-done" style="color:var(--green)">0</td></tr>
+        <tr><td>Pending</td><td id="s-pending" style="color:var(--amber)">0</td></tr>
+        <tr><td>Overdue</td><td id="s-overdue" style="color:var(--red)">0</td></tr>
+        <tr><td>Points</td><td id="s-points" style="color:var(--accent)">0</td></tr>
+      </table>
+    </div>
+  </aside>
+
+</div>
+
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal">
+    <h3>Delete task?</h3>
+    <p>This action cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn-danger" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let tasks = [], gamification = { points: 0, streak: 0 }, selectedDiff = 1, deleteTargetId = null, nextId = 1;
+
+const seed = [
+  { id:2, title:'Workout', deadline:'2026-03-19', difficulty:3, isCompleted:true },
+  { id:5, title:'Assignment', deadline:'2026-03-16', difficulty:2, isCompleted:true },
+  { id:3, title:'Pack for Trip', deadline:'2026-03-20', difficulty:2, isCompleted:true },
+  { id:4, title:'walk', deadline:'2026-03-19', difficulty:1, isCompleted:true },
+  { id:6, title:'coding', deadline:'2026-03-31', difficulty:2, isCompleted:false },
+];
+
+function calcPriority(t) {
+  const days = Math.ceil((new Date(t.deadline) - new Date()) / 86400000);
+  const u = days <= 0 ? 50 : days <= 1 ? 40 : days <= 3 ? 30 : days <= 7 ? 20 : 10;
+  return u + t.difficulty * 10 + 10;
+}
+
+async function init() {
+  const res = await fetch("http://localhost:8080/tasks");
+  tasks = await res.json();
+
+  const gRes = await fetch("http://localhost:8080/gamification");
+  gamification = await gRes.json();
+
+  render();
+}
+
+function save() { localStorage.setItem('its_tasks', JSON.stringify(tasks)); localStorage.setItem('its_gami', JSON.stringify(gamification)); }
+
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    const t = b.textContent.toLowerCase().trim();
+    if ((name==='tasks'&&t.includes('board'))||(name==='add'&&t.includes('add'))||(name==='search'&&t.includes('search'))||(name==='analytics'&&t.includes('analytics'))||(name==='focus'&&t.includes('focus'))) b.classList.add('active');
+  });
+  if (name === 'analytics') renderAnalytics();
+  if (name === 'focus') renderFocus();
+}
+
+function diffTag(d) {
+  if (d<=2) return '<span class="tag tag-easy">Easy</span>';
+  if (d===3) return '<span class="tag tag-medium">Medium</span>';
+  return '<span class="tag tag-hard">Hard</span>';
+}
+function isOverdue(t) {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const deadline = new Date(t.deadline);
+  deadline.setHours(0,0,0,0);
+
+  return !t.completed && deadline < today;
+}
+
+function taskCard(t, i) {
+  return `<div class="task-card ${t.completed?'completed':''}" style="animation-delay:${i*0.03}s">
+    <label class="toggle-wrap" title="${t.completed?'Mark incomplete':'Mark complete'}">
+      <input type="checkbox" ${t.completed?'checked':''} onchange="toggleComplete(${t.id},this)" />
+      <span class="toggle-slider"></span>
+    </label>
+    <div class="task-info">
+      <div class="task-title">${t.title}</div>
+      <div class="task-meta">${diffTag(t.difficulty)}<span>${t.deadline}</span>${isOverdue(t)?'<span class="tag tag-overdue">Overdue</span>':''}</div>
+    </div>
+    <div class="task-priority"><span class="priority-val">${t.priority}</span><span class="priority-label">priority</span></div>
+    <div class="task-actions"><button class="icon-btn" onclick="openDeleteModal(${t.id})">✕</button></div>
+  </div>`;
+}
+
+function renderTasks() {
+  const sorted = [...tasks].sort((a,b) => b.priority - a.priority);
+  const done = tasks.filter(t=>t.completed).length;
+  document.getElementById('board-sub').textContent = `${done} / ${tasks.length} completed · sorted by priority`;
+  document.getElementById('task-list').innerHTML = sorted.length ? sorted.map(taskCard).join('') : `<div class="empty-state"><div class="empty-icon">○</div><div class="empty-text">No tasks yet.</div></div>`;
+}
+
+function renderSidebar() {
+  const total=tasks.length, done=tasks.filter(t=>t.completed).length, overdue=tasks.filter(isOverdue).length, rate=total?Math.round(done/total*100):0;
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-done').textContent=done;
+  document.getElementById('s-pending').textContent=total-done;
+  document.getElementById('s-overdue').textContent=overdue;
+  document.getElementById('s-points').textContent=gamification.points;
+  const rec=tasks.filter(t=>!t.completed).sort((a,b)=>b.priority-a.priority)[0];
+  document.getElementById('rec-task').textContent=rec?rec.title:'All done! 🎉';
+  document.getElementById('prog-fill').style.width=rate+'%';
+  document.getElementById('prog-label').textContent=rate+'%';
+}
+
+function renderHeader() {
+  const total=tasks.length,done=tasks.filter(t=>t.completed).length,overdue=tasks.filter(isOverdue).length,rate=total?Math.round(done/total*100):0;
+  document.getElementById('h-total').textContent=total;
+  document.getElementById('h-done').textContent=done;
+  document.getElementById('h-rate').textContent=rate+'%';
+  document.getElementById('h-overdue').textContent=overdue;
+  document.getElementById('h-streak').textContent=gamification.streak;
+}
+
+function render() { renderTasks(); renderSidebar(); renderHeader(); }
+
+function renderAnalytics() {
+  const total=tasks.length,done=tasks.filter(t=>t.completed).length,rate=total?(done/total*100).toFixed(1):0,overdue=tasks.filter(isOverdue).length;
+  document.getElementById('an-rate').textContent=rate+'%';
+  document.getElementById('an-overdue').textContent=overdue;
+  document.getElementById('an-score').textContent=rate>=80?'Great':rate>=50?'Good':'Low';
+  document.getElementById('sc-rate').className='stat-card '+(rate>=80?'good':rate>=50?'warn':'bad');
+  document.getElementById('sc-overdue').className='stat-card '+(overdue===0?'good':overdue<=2?'warn':'bad');
+  document.getElementById('sc-score').className='stat-card '+(rate>=80?'good':rate>=50?'warn':'bad');
+  const g={easy:{t:0,c:0},medium:{t:0,c:0},hard:{t:0,c:0}};
+  tasks.forEach(t=>{const k=t.difficulty<=2?'easy':t.difficulty===3?'medium':'hard';g[k].t++;if(t.completed)g[k].c++;});
+  ['easy','medium','hard'].forEach(k=>{const p=g[k].t?Math.round(g[k].c/g[k].t*100):0;document.getElementById('bar-'+k).style.width=p+'%';document.getElementById('pct-'+k).textContent=p+'%';});
+  const ins=[];
+  if(rate>=80)ins.push({cls:'positive',text:'Excellent productivity — you\'re knocking tasks out consistently.'});
+  else if(rate>=50)ins.push({cls:'warning',text:'Good progress. Aim to cross 80% completion.'});
+  else ins.push({cls:'negative',text:'Low completion rate. Try breaking tasks into smaller steps.'});
+  if(overdue>0)ins.push({cls:'negative',text:`${overdue} overdue task${overdue>1?'s':''}. Tackle these first.`});
+  else ins.push({cls:'positive',text:'No overdue tasks. Great deadline management!'});
+  if(g.hard.t>0&&g.hard.c/g.hard.t<0.5)ins.push({cls:'warning',text:'Hard tasks piling up. Schedule one per day.'});
+  document.getElementById('insights-list').innerHTML=ins.map(i=>`<div class="insight-row ${i.cls}">${i.text}</div>`).join('');
+}
+
+function renderFocus() {
+  const done=tasks.filter(t=>t.completed).length;
+  document.getElementById('gami-points').textContent=gamification.points;
+  document.getElementById('gami-streak').textContent=gamification.streak;
+  document.getElementById('gami-done').textContent=done;
+  const ranks=[{min:0,name:'Beginner',icon:'🥉',desc:'Just getting started'},{min:5,name:'Apprentice',icon:'🥈',desc:'Building momentum'},{min:10,name:'Achiever',icon:'🥇',desc:'Solid performer'},{min:20,name:'Expert',icon:'🏆',desc:'Task master'},{min:50,name:'Legend',icon:'⭐',desc:'Legendary productivity'}];
+  const p=gamification.points;let rank=ranks[0],next=ranks[1];
+  for(let i=ranks.length-1;i>=0;i--){if(p>=ranks[i].min){rank=ranks[i];next=ranks[i+1]||null;break;}}
+  document.getElementById('rank-card').innerHTML=`<div class="rank-icon">${rank.icon}</div><div class="rank-info"><h3>${rank.name}</h3><p>${rank.desc}</p></div>`;
+  if(next){const pct=Math.round((p-rank.min)/(next.min-rank.min)*100);document.getElementById('rank-prog').style.width=Math.min(pct,100)+'%';document.getElementById('next-rank-label').textContent=`${next.min-p} pts to ${next.name}`;}
+  else{document.getElementById('rank-prog').style.width='100%';document.getElementById('next-rank-label').textContent='Max rank!';}
+}
+
+function selectDiff(d){selectedDiff=d;document.querySelectorAll('.diff-opt').forEach((el,i)=>el.classList.toggle('sel',i+1===d));}
+
+async function addTask() {
+  const title = document.getElementById('inp-title').value;
+  const deadline = document.getElementById('inp-deadline').value;
+
+  await fetch("http://localhost:8080/add", {
+    method: "POST",
+    body: `${title},${deadline},${selectedDiff}`
+  });
+
+  await init();
+}
+
+async function toggleComplete(id, checkbox) {
+  await fetch(`http://localhost:8080/complete?id=${id}`, {
+    method: "POST"
+  });
+
+  checkbox.checked = true;
+  await init();
+}
+
+function openDeleteModal(id){deleteTargetId=id;document.getElementById('delete-modal').classList.add('open');}
+function closeModal(){document.getElementById('delete-modal').classList.remove('open');deleteTargetId=null;}
+
+async function confirmDelete() {
+  await fetch(`http://localhost:8080/delete?id=${deleteTargetId}`, {
+    method: "POST"
+  });
+  await init();
+}
+
+function searchTasks(){
+  const q=document.getElementById('search-inp').value.toLowerCase().trim(),res=document.getElementById('search-results');
+  if(!q){res.innerHTML=`<div class="empty-state"><div class="empty-icon">◎</div><div class="empty-text">Start typing to search.</div></div>`;return;}
+  const found=tasks.filter(t=>t.title.toLowerCase().includes(q)||t.deadline.includes(q)).sort((a,b)=>b.priority-a.priority);
+  res.innerHTML=found.length?found.map(taskCard).join(''):`<div class="empty-state"><div class="empty-icon">○</div><div class="empty-text">No results for "${q}"</div></div>`;
+}
+
+async function checkReminders() {
+  const res = await fetch("http://localhost:8080/reminders");
+  const reminders = await res.json();
+
+  reminders.forEach(showNotification);
+}
+
+function showNotification(text) {
+  const div = document.createElement("div");
+
+  div.style = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #1a1916;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-top: 10px;
+    min-width: 250px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    z-index: 9999;
+  `;
+
+  div.innerHTML = `
+    <div>${text}</div>
+    <div style="margin-top:8px; display:flex; gap:6px;">
+      <button onclick="this.parentElement.parentElement.remove()">❌</button>
+      <button onclick="setTimeout(()=>showNotification('${text}'),5000)">Later</button>
+    </div>
+  `;
+
+  document.body.appendChild(div);
+
+  setTimeout(() => div.remove(), 8000);
+}
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+document.getElementById('delete-modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+
+// 👇 ADD HERE
+let remindersShown = false;
+window.onload = () => {
+  checkRemindersOnce();
+};
+window.onfocus = () => {
+  checkRemindersOnce();
+};
+function checkRemindersOnce() {
+  if (remindersShown) return;
+  checkReminders();
+  remindersShown = true;
+}
+
+
+init();
+</script>
+</body>
+</html>
