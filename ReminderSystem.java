@@ -24,7 +24,7 @@ public void run() {
         for (Task t : manager.getAllTasks()) {
             if (!t.isCompleted() &&
                 t.getDeadline().isBefore(java.time.LocalDate.now().plusDays(1))) {
-                reminders.add("⚠️ " + t.getTitle() + " is due soon!");
+                reminders.add( t.getTitle() + " is due soon!");
             }
         }
         ready = true;

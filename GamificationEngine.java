@@ -14,11 +14,10 @@ public class GamificationEngine {
             if (lastCompletedDate == null) {
                 streak = 1;
             } else if (lastCompletedDate.equals(today)) {
-                // same day → do nothing
             } else if (lastCompletedDate.plusDays(1).equals(today)) {
-                streak++; // consecutive day
+                streak++; 
             } else {
-                streak = 1; // streak broken
+                streak = 1; 
             }
 
             lastCompletedDate = today;

@@ -17,7 +17,6 @@ public class Server {
 
     public static void main(String[] args) throws Exception {
 
-        // Load existing data
         ArrayList<Task> tasks = storage.loadTasks();
         for (Task t : tasks) {
             t.setPriority(priorityEngine.calculatePriority(t));
@@ -59,7 +58,6 @@ public class Server {
         os.close();
     }
 
-    // GET /tasks
     private static void handleTasks(HttpExchange ex) throws IOException {
         StringBuilder json = new StringBuilder("[");
         for (Task t : manager.getAllTasks()) {
@@ -78,7 +76,6 @@ public class Server {
         send(ex, json.toString());
     }
 
-    // POST /add
     private static void handleAddTask(HttpExchange ex) throws IOException {
         InputStream is = ex.getRequestBody();
         String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
@@ -100,14 +97,12 @@ public class Server {
         send(ex, "OK");
     }
 
-    // POST /complete?id=1
     private static void handleComplete(HttpExchange ex) throws IOException {
     String query = ex.getRequestURI().getQuery();
     int id = Integer.parseInt(query.split("=")[1]);
 
     Task completedTask = null;
 
-    // find task
     for (Task t : manager.getAllTasks()) {
         if (t.getId() == id) {
             completedTask = t;
@@ -115,20 +110,14 @@ public class Server {
         }
     }
 
-    // only if not already completed
     if (completedTask != null && !completedTask.isCompleted()) {
 
-        // mark complete
         manager.markTaskCompleted(id);
-
-        // 🔥 update gamification
         game.addPoint(completedTask.getDifficulty());
 
-        // update priority
         completedTask.setPriority(0);
     }
 
-    // save everything
     storage.saveTasks(manager.getAllTasks());
 
     gameStorage.save(

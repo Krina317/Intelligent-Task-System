@@ -24,7 +24,6 @@ public class Main {
         ArrayList<Task> loadedTasks = storage.loadTasks();
         GamificationStorage gameStorage = new GamificationStorage();
 
-        // Load previous data
         Object[] data = gameStorage.load();
         game.setPoints((int) data[0]);
         game.setStreak((int) data[1]);
@@ -42,14 +41,14 @@ public class Main {
         Thread reminderThread = new Thread(reminder);
         reminderThread.start();
         try {
-            reminderThread.join(); // waits until ReminderSystem.run() fully finishes
+            reminderThread.join(); 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
         List<String> alerts = reminder.getReminders();
 
         if (!alerts.isEmpty()) {
-            System.out.println("\n🔔 REMINDERS:");
+            System.out.println("\n REMINDERS:");
             for (String msg : alerts) {
                 System.out.println(msg);
             }
@@ -77,7 +76,7 @@ public class Main {
 
                 case 1:
                 System.out.print("Enter Task ID (you can type anything): ");
-                int inputId = sc.nextInt(); // ignored logically
+                int inputId = sc.nextInt(); 
                 sc.nextLine();
 
                 System.out.print("Enter Title: ");
@@ -91,13 +90,11 @@ public class Main {
 
                 ArrayList<Task> tasksList = manager.getAllTasks();
 
-                // Duplicate check
                 if (storage.isDuplicate(tasksList, title, deadline)) {
                     System.out.println("Task already exists!");
                     break;
                 }
 
-                // Auto ID assignment
                 int newId = storage.getLastId(tasksList) + 1;
 
                 Task task = new Task(newId, title, deadline, difficulty);
@@ -107,7 +104,6 @@ public class Main {
 
                 manager.addTask(task);
 
-                //Save immediately
                 persistAll(manager, storage, game, gameStorage);
 
                 System.out.println("Task added with ID: " + newId);
@@ -115,7 +111,6 @@ public class Main {
                 case 2:
                     ArrayList<Task> tasks = manager.getAllTasks();
 
-                    // Sorting by priority
                     scheduler.sortByPriority(tasks);
 
                     System.out.println("\n--- Tasks ---");
@@ -150,7 +145,6 @@ public class Main {
                         System.out.println("Task not found or already completed.");
                     }
 
-                    // SAVE gamification
                     persistAll(manager, storage, game, gameStorage);
 
                                         
@@ -171,12 +165,10 @@ public class Main {
                     break;
 
                 case 5:
-                    //  User Analytics
                     analytics.generateInsights(manager.getAllTasks());
                     break;
 
                 case 6:
-                    //  Recommendation system
                     Task next = scheduler.getNextTask(manager.getAllTasks());
 
                     if (next != null) {
@@ -199,13 +191,11 @@ public class Main {
                     break;
 
                 case 8:
-                    //  Productivity Score
                     int score = tracker.calculateScore(manager.getAllTasks());
                     System.out.println(" Productivity Score: " + score + "%");
                     break;
 
                 case 9:
-                    //  Gamification stats
                     System.out.println("Points: " + game.getPoints());
                     System.out.println("Streak: " + game.getStreak());
                     break;
@@ -213,7 +203,6 @@ public class Main {
                 case 0:
                     persistAll(manager, storage, game, gameStorage);
                     System.out.println("Exiting...");
-                    // reminderThread.interrupt(); 
                     break;
 
                 default:

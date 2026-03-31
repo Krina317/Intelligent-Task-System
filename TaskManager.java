@@ -15,7 +15,7 @@ public class TaskManager {
         for (Task t : tasks) {
             if (t.getId() == id) {
                 t.markCompleted();
-                t.setPriority(0); // ✅ key fix
+                t.setPriority(0); 
                 break;
             }
         }

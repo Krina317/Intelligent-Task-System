@@ -4,8 +4,6 @@ import java.time.LocalDate;
 public class GamificationStorage {
 
     private final String FILE_NAME = "gamification.txt";
-
-    // 🔹 Save
     public void save(int points, int streak, LocalDate date) {
     try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME))) {
         writer.write(points + "," + streak + "," + date);
@@ -14,7 +12,6 @@ public class GamificationStorage {
     }
 }
 
-    // 🔹 Load
     public Object[] load() {
     File file = new File(FILE_NAME);
 

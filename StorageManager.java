@@ -5,8 +5,6 @@ import java.util.ArrayList;
 public class StorageManager implements Storage  {
 
     private final String FILE_NAME = "tasks.txt";
-
-    // Load tasks from file
     public ArrayList<Task> loadTasks() {
         ArrayList<Task> tasks = new ArrayList<>();
 
@@ -39,7 +37,6 @@ public class StorageManager implements Storage  {
         return tasks;
     }
 
-    // Save tasks
     public void saveTasks(ArrayList<Task> tasks) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME))) {
             for (Task t : tasks) {
@@ -57,7 +54,6 @@ public class StorageManager implements Storage  {
         }
     }
 
-    // Get last ID
     public int getLastId(ArrayList<Task> tasks) {
         int maxId = 0;
         for (Task t : tasks) {
@@ -68,7 +64,6 @@ public class StorageManager implements Storage  {
         return maxId;
     }
 
-    // Check duplicate (same title + deadline)
     public boolean isDuplicate(ArrayList<Task> tasks, String title, LocalDate deadline) {
         for (Task t : tasks) {
             if (t.getTitle().equalsIgnoreCase(title) &&

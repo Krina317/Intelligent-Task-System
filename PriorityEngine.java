@@ -9,8 +9,8 @@ public class PriorityEngine {
 
         int urgencyScore;
 
-        if (daysLeft <= 0) urgencyScore = 80;       // overdue
-        else if (daysLeft == 1) urgencyScore = 70;  // due soon
+        if (daysLeft <= 0) urgencyScore = 80;       
+        else if (daysLeft == 1) urgencyScore = 70; 
         else urgencyScore = Math.max(10, 50 - (int)(daysLeft * 5));
         int difficultyScore = task.getDifficulty() * 6;
 

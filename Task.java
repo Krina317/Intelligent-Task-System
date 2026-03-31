@@ -18,7 +18,6 @@ public class Task {
         this.isCompleted = false;
     }
 
-    // Getters & Setters
     public int getId() { return id; }
     public String getTitle() { return title; }
     public LocalDate getDeadline() { return deadline; }
