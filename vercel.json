@@ -1,0 +1,5 @@
+{
+  "routes": [
+    { "src": "/", "dest": "/intelligent_task_system.html" }
+  ]
+}
