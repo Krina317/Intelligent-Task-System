@@ -19,7 +19,7 @@ public class Server {
 
         ArrayList<Task> tasks = storage.loadTasks();
         for (Task t : tasks) {
-            t.setPriority(priorityEngine.calculatePriority(t));
+            t.setPriority(priorityEngine.process(t));
             manager.addTask(t);
         }
 
@@ -89,7 +89,7 @@ public class Server {
         int id = storage.getLastId(manager.getAllTasks()) + 1;
 
         Task task = new Task(id, title, deadline, difficulty);
-        task.setPriority(priorityEngine.calculatePriority(task));
+        task.setPriority(priorityEngine.process(task));
 
         manager.addTask(task);
         storage.saveTasks(manager.getAllTasks());
@@ -113,7 +113,7 @@ public class Server {
     if (completedTask != null && !completedTask.isCompleted()) {
 
         manager.markTaskCompleted(id);
-        game.addPoint(completedTask.getDifficulty());
+        game.addPoint(completedTask.getRewardPoints());
 
         completedTask.setPriority(0);
     }

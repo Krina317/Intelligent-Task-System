@@ -30,7 +30,7 @@ public class Main {
         game.setLastCompletedDate((LocalDate) data[2]);
 
         for (Task t : loadedTasks) {
-            int p = engine.calculatePriority(t);
+            int p = engine.process(t);
             t.setPriority(p);
             manager.addTask(t);
         }
@@ -99,7 +99,7 @@ public class Main {
 
                 Task task = new Task(newId, title, deadline, difficulty);
 
-                int priority = engine.calculatePriority(task);
+                int priority = engine.process(task);
                 task.setPriority(priority);
 
                 manager.addTask(task);
